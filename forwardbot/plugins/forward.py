@@ -88,7 +88,7 @@ async def handler(event):
         return
     global start
     if start:
-                stop = str(datetime.datetime.now())
+        stop = str(datetime.datetime.now())
         diff = datetime.datetime.strptime(start, datetimeFormat) - datetime.datetime.strptime(stop, datetimeFormat)
         duration = abs(diff)
         days, seconds = duration.days, duration.seconds
