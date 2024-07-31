@@ -1,7 +1,9 @@
 from telethon import events
 from forwardbot import bot
 from forwardbot.BotConfig import Config
+
 bothandler = Config.COMMAND_HAND_LER
+
 def forwardbot_cmd(add_cmd, is_args=False):
     def cmd(func):
         if is_args:
@@ -14,38 +16,32 @@ def forwardbot_cmd(add_cmd, is_args=False):
     return cmd
 
 async def is_sudo(event):
-    if str(event.sender_id) in Config.SUDO_USERS:
-        return True
-    else:
-        return False
+    return str(event.sender_id) in Config.SUDO_USERS
 
 def start_forwardbot(shortname):
+    import importlib
+    import sys
+    from pathlib import Path
+
     if shortname.startswith("__"):
-        pass
-    elif shortname.endswith("_"):
-        import importlib
-        import sys
-        from pathlib import Path
-        import forwardbot.utils
-        path = Path(f"forwardbot/plugins/{shortname}.py")
-        name = "forwardbot.plugins.{}".format(shortname)
-        spec = importlib.util.spec_from_file_location(name, path)
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        print("Starting Your  Bot.")
-        print("IMPORTED " + shortname)
-    else:
-        import importlib
-        import sys
-        from pathlib import Path
-        import forwardbot.utils
-        path = Path(f"forwardbot/plugins/{shortname}.py")
-        name = "forwardbot.plugins.{}".format(shortname)
-        spec = importlib.util.spec_from_file_location(name, path)
-        mod = importlib.util.module_from_spec(spec)
+        # Skip special module names
+        return
+
+    # Load the module dynamically
+    path = Path(f"forwardbot/plugins/{shortname}.py")
+    name = f"forwardbot.plugins.{shortname}"
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    # Setup the module
+    if hasattr(mod, 'forwardbot_cmd'):
         mod.forwardbot_cmd = forwardbot_cmd
+    if hasattr(mod, 'forwardbot'):
         mod.forwardbot = bot
+    if hasattr(mod, 'Config'):
         mod.Config = Config
-        spec.loader.exec_module(mod)
-        sys.modules["forwardbot.plugins" + shortname] = mod
-        print("IMPORTED " + shortname)
+
+    # Register the module in sys.modules
+    sys.modules[f"forwardbot.plugins.{shortname}"] = mod
+    print(f"IMPORTED {shortname}")
